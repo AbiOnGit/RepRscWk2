@@ -1,0 +1,114 @@
+---
+title: "activity"
+author: "Abijah Mashava"
+date: "October 16, 2015"
+output: html_document
+---
+
+
+# Peer Assessment 1
+Abijah S Mashava
+
+## Set global options
+
+```{r setoptopns, echo=TRUE}
+
+```
+
+## Loading and preprocessing the data
+
+```{r loaddata}
+
+##if(!file.exists(".//data")){dir.create(".//data")}
+##temp <- tempfile()
+##download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip",temp)
+##data <- read.table(unz(temp, "a1.dat"))
+##unlink(temp)
+
+temp <- tempfile()
+if(!file.exists(".//data")){
+  dir.create(".//data")
+  }
+fileUrl1 = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(fileUrl1,destfile = ".//data//activity.csv")
+data = read.csv(".//data//activity.csv")
+unlink(temp)
+
+activity <- na.omit(data)
+head(activity)
+
+```
+
+## Mean total number of steps taken per day
+
+```{r steps}
+tspd <- aggregate(steps ~ date, data=activity, sum)
+require(stats)
+##hist(activity, breaks = c(12,20,36,80,200,1000,17000), 
+hist(activity, breaks = 100, 
+     freq = TRUE, main = "Mean total number of steps taken per day", 
+     xlab = "5-minute interval",
+     ylab = "Averaged steps across all days")
+```
+
+## Average daily activity pattern
+
+```{r daily}
+
+library("TTR") ## SMA() fn in "TTR" R package used to smooth time series data 
+               ## using a simple moving average method
+library("forecast") ## Exponential smoothing package used to make short-term forecasts 
+                    ## for time series data
+
+adap <- aggregate(steps ~ date, data=activity, mean)
+##meanTbl <- with(activity, tapply(steps, ISOdate(YR, MO, DA), mean) )
+plot.ts(adap$steps)            # make time plot of forecast errors
+
+plotForecastErrors <- function(forecasterrors)
+  {
+     # make a histogram of the forecast errors:
+     mybinsize <- IQR(forecasterrors)/4
+     mysd   <- sd(forecasterrors)
+     mymin  <- min(forecasterrors) - mysd*5
+     mymax  <- max(forecasterrors) + mysd*3
+     # generate normally distributed data with mean 0 and standard deviation mysd
+     mynorm <- rnorm(10000, mean=0, sd=mysd)
+     mymin2 <- min(mynorm)
+     mymax2 <- max(mynorm)
+     if (mymin2 < mymin) { mymin <- mymin2 }
+     if (mymax2 > mymax) { mymax <- mymax2 }
+     # make a red histogram of the forecast errors, with the normally distributed data overlaid:
+     mybins <- seq(mymin, mymax, mybinsize)
+     hist(forecasterrors, col="red", freq=FALSE, breaks=mybins)
+     # freq=FALSE ensures the area under the histogram = 1
+     # generate normally distributed data with mean 0 and standard deviation mysd
+     myhist <- hist(mynorm, plot=FALSE, breaks=mybins)
+     # plot the normal curve as a blue line on top of the histogram of forecast errors:
+     points(myhist$mids, myhist$density, type="l", col="blue", lwd=2)
+}
+
+plotForecastErrors(adap$steps) # make a histogram
+
+```
+
+
+## Imputing missing values
+
+```{r missingvalues}
+random.imp <- function(a){
+  missing <- is.na(a)
+  n.missing <- sum(missing)
+  a.obs <- a[!missing]
+  imputed <- a
+  imputed[missing] <- sample(a.obs,n.missing,replace = TRUE)
+  return(imputed)
+  activity.imp <- random.imp(data)
+}
+```
+
+## Differences in activity patterns between weekdays and weekends
+
+```{r differences}
+
+```
+
